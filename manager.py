@@ -50,7 +50,7 @@ class FileManager:
             if not self.current_user:
                 raise ValueError("请先登录")
             
-            user = session.query(User).filter_by(username=username).first()
+            user = session.query(User).filter_by(username=self.current_user.username).first()
             if user is None:
                 raise ValueError(f"用户{username}不存在")
             
@@ -81,3 +81,22 @@ class FileManager:
                 print(f"文件{file_name}已创建并保存到{filepath}")
                 return user_file
             
+    def delete_file(self, file_name:str):
+        with Session() as session:
+            if not self.current_user:
+                raise ValueError("请先登录")
+            
+            user = session.query(User).filter_by(username=self.current_user.username).first()
+            if user is None:
+                raise ValueError(f"用户{self.current_user.username}不存在")
+            
+            file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
+            if file is None:
+                raise ValueError(f"文件{file_name}不存在")
+            
+            if os.path.exists(file.file_path):
+                os.remove(file.file_path)
+            
+            session.delete(file)
+            session.commit()
+            print(f"文件{file_name}已删除")

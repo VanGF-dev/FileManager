@@ -4,7 +4,8 @@ if __name__ == "__main__":
 
     fm = FileManager()
     try:
-        # fm.create_user("testuser", "testpassword")
+        # fm.create_user("testuser", "testpassword")y
+
         fm.login("testuser","testpassword")
         fm.create_file("testuser", "testfile", "helloworld")
         fm.logout()
