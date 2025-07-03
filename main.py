@@ -7,7 +7,8 @@ if __name__ == "__main__":
         # fm.create_user("testuser", "testpassword")y
 
         fm.login("testuser","testpassword")
-        fm.create_file("testuser", "testfile", "helloworld")
+        fm.list_files()
+        fm.read_file("testfile")
         fm.logout()
     except ValueError as e:
         print(e)

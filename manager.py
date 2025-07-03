@@ -100,3 +100,74 @@ class FileManager:
             session.delete(file)
             session.commit()
             print(f"文件{file_name}已删除")
+
+    def update_file(self, file_name: str, new_content: str):
+        with Session() as session:
+            if not self.current_user:
+                raise ValueError("请先登录")
+            
+            user = session.query(User).filter_by(username=self.current_user.username).first()
+            if user is None:
+                raise ValueError(f"用户{self.current_user.username}不存在")
+            
+            file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
+            if file is None:
+                raise ValueError(f"文件{file_name}不存在")
+            
+            with open(file.file_path, "w") as f:
+                f.write(new_content)
+            
+            print(f"文件{file_name}已更新")
+
+    def list_files(self) -> list[File]:
+
+        with Session() as session:
+            if not self.current_user:
+                raise ValueError("请先登录")
+            
+            user = session.query(User).filter_by(username=self.current_user.username).first()
+            if user is None:
+                raise ValueError(f"用户{self.current_user.username}不存在")
+            
+            files = session.query(File).filter_by(user_id=user.id).all()
+            
+            for file in files:
+                print(f"文件名: {file.file_name}, 路径: {file.file_path}")
+            return files
+        
+    def find_file(self, file_name: str) -> Optional[File]:
+            
+            with Session() as session:
+                if not self.current_user:
+                    raise ValueError("请先登录")
+                
+                user = session.query(User).filter_by(username=self.current_user.username).first()
+                
+                if user is None:
+                    raise ValueError(f"用户{self.current_user.username}不存在")
+                
+                file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
+                if file is None:
+                    print(f"文件{file_name}不存在")
+                    return None
+                
+                print(f"找到文件: {file.file_name}, 路径: {file.file_path}")
+                return file 
+
+    def read_file(self, file_name: str) -> Optional[str]:
+        with Session() as session:
+            if not self.current_user:
+                raise ValueError("请先登录")
+            
+            user = session.query(User).filter_by(username=self.current_user.username).first()
+            if user is None:
+                raise ValueError(f"用户{self.current_user.username}不存在")
+            
+            file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
+            if file is None:
+                raise ValueError(f"文件{file_name}不存在")
+            
+            with open(file.file_path, "r") as f:
+                content = f.read()
+                print(f"文件内容: {content}")
+                return content
