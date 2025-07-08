@@ -1,4 +1,6 @@
 from typing import Optional
+from sqlalchemy import select
+from sqlalchemy import func
 from user import User
 from file import File
 from base import Session
@@ -119,21 +121,26 @@ class FileManager:
             
             print(f"文件{file_name}已更新")
 
-    def list_files(self) -> list[File]:
+    def list_files(self):
 
         with Session() as session:
             if not self.current_user:
                 raise ValueError("请先登录")
             
-            user = session.query(User).filter_by(username=self.current_user.username).first()
-            if user is None:
-                raise ValueError(f"用户{self.current_user.username}不存在")
+            user_id = session.query(User).filter_by(username=self.current_user.username).first().id
+            count = select(func.count()).select_from(File).where(File.user_id == self.current_user.id)
+            total = func.count(session.execute(count))
+            page_size = 2
+            offset = 0
             
-            files = session.query(File).filter_by(user_id=user.id).all()
+            for _ in range(0, total, page_size):
+                query = select(File.file_name).where(File.user_id == user_id).order_by(File.id).limit(page_size).offset(offset)
+                offset += page_size
+                files = session.execute(query).scalars().all()
+
+                for file in files:
+                    print(f"文件名: {file}")
             
-            for file in files:
-                print(f"文件名: {file.file_name}, 路径: {file.file_path}")
-            return files
         
     def find_file(self, file_name: str) -> Optional[File]:
             
@@ -142,10 +149,6 @@ class FileManager:
                     raise ValueError("请先登录")
                 
                 user = session.query(User).filter_by(username=self.current_user.username).first()
-                
-                if user is None:
-                    raise ValueError(f"用户{self.current_user.username}不存在")
-                
                 file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
                 if file is None:
                     print(f"文件{file_name}不存在")
@@ -160,9 +163,7 @@ class FileManager:
                 raise ValueError("请先登录")
             
             user = session.query(User).filter_by(username=self.current_user.username).first()
-            if user is None:
-                raise ValueError(f"用户{self.current_user.username}不存在")
-            
+
             file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
             if file is None:
                 raise ValueError(f"文件{file_name}不存在")
@@ -171,3 +172,5 @@ class FileManager:
                 content = f.read()
                 print(f"文件内容: {content}")
                 return content
+            
+    
