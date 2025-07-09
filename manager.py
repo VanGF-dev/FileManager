@@ -121,7 +121,7 @@ class FileManager:
             
             print(f"文件{file_name}已更新")
 
-    def list_files(self):
+    def list_file(self):
 
         with Session() as session:
             if not self.current_user:
@@ -129,33 +129,37 @@ class FileManager:
             
             user_id = session.query(User).filter_by(username=self.current_user.username).first().id
             count = select(func.count()).select_from(File).where(File.user_id == self.current_user.id)
-            total = func.count(session.execute(count))
+            total = session.execute(count).scalar()
             page_size = 2
-            offset = 0
             
-            for _ in range(0, total, page_size):
-                query = select(File.file_name).where(File.user_id == user_id).order_by(File.id).limit(page_size).offset(offset)
-                offset += page_size
-                files = session.execute(query).scalars().all()
+            for offset in range(0, total, page_size):
+                files = session.query(File
+                                ).filter_by(user_id=user_id
+                                ).order_by(File.id
+                                ).offset(offset
+                                ).limit(page_size
+                                ).all()
 
                 for file in files:
-                    print(f"文件名: {file}")
+                    print(f"文件名: {file.file_name}, 路径: {file.file_path}")
             
         
-    def find_file(self, file_name: str) -> Optional[File]:
+    def find_file(self, content: str) -> Optional[File]:
             
             with Session() as session:
                 if not self.current_user:
                     raise ValueError("请先登录")
                 
                 user = session.query(User).filter_by(username=self.current_user.username).first()
-                file = session.query(File).filter_by(file_name=file_name, user_id=user.id).first()
-                if file is None:
-                    print(f"文件{file_name}不存在")
+                files = session.query(File).filter_by(user_id=user.id).filter(File.file_name.like(f"%{content}%")).all()
+                 
+                if files is None:
+                    print("没有找到匹配的文件")
                     return None
                 
-                print(f"找到文件: {file.file_name}, 路径: {file.file_path}")
-                return file 
+                for file in files:
+                    print(f"找到文件: {file.file_name}，路径: {file.file_path}")
+                
 
     def read_file(self, file_name: str) -> Optional[str]:
         with Session() as session:
