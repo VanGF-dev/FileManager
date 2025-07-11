@@ -18,10 +18,10 @@ class FileManager:
             if exiting_user is not None:
                 raise ValueError(f"用户{username}已存在")
         
-            if username.strip() == "":
+            if username == "":
                 raise ValueError("用户名不能为空")
         
-            if password is None or password.strip() == "":
+            if password == "":
                 raise ValueError("密码不能为空")
             
             
@@ -30,8 +30,8 @@ class FileManager:
                 raise ValueError("两次输入的密码不一致")
             
             session.add(user)
-            session.commit()
             print(f"用户{username}已创建")
+            session.commit()
             return user
     
     def login(self, username: str, password: str) -> Optional[User]:
@@ -39,23 +39,24 @@ class FileManager:
             user = session.query(User).filter_by(username=username, password=password).first()
             if user is None:
                 print("用户名或密码错误")
-            self.current_user = user
-            print(f"用户{username}登录成功")
+            else: 
+                self.current_user = user
+                print(f"用户{username}登录成功")
             return user
     
     def logout(self):
+        if self.current_user is None:
+            print("没有用户登录")
+            return
         self.current_user = None
         print("已登出当前用户")
 
-    def create_file(self, username: str, file_name: str, content: str, auto=False) -> File:
+    def create_file(self, file_name: str, content, auto=False) -> File:
         with Session() as session:
             if not self.current_user:
                 raise ValueError("请先登录")
             
             user = session.query(User).filter_by(username=self.current_user.username).first()
-            if user is None:
-                raise ValueError(f"用户{username}不存在")
-            
             
 
             existing_file = session.query(File).filter_by(file_name=file_name).first()
@@ -85,7 +86,7 @@ class FileManager:
             
     def delete_file(self, file_name:str):
         with Session() as session:
-            if not self.current_user:
+            if self.current_user is None:
                 raise ValueError("请先登录")
             
             user = session.query(User).filter_by(username=self.current_user.username).first()
@@ -105,7 +106,7 @@ class FileManager:
 
     def update_file(self, file_name: str, new_content: str):
         with Session() as session:
-            if not self.current_user:
+            if self.current_user is None:
                 raise ValueError("请先登录")
             
             user = session.query(User).filter_by(username=self.current_user.username).first()
@@ -124,7 +125,7 @@ class FileManager:
     def list_file(self):
 
         with Session() as session:
-            if not self.current_user:
+            if self.current_user is None:
                 raise ValueError("请先登录")
             
             user_id = session.query(User).filter_by(username=self.current_user.username).first().id
@@ -147,7 +148,7 @@ class FileManager:
     def find_file(self, content: str) -> Optional[File]:
             
             with Session() as session:
-                if not self.current_user:
+                if self.current_user is None:
                     raise ValueError("请先登录")
                 
                 user = session.query(User).filter_by(username=self.current_user.username).first()
@@ -163,7 +164,7 @@ class FileManager:
 
     def read_file(self, file_name: str) -> Optional[str]:
         with Session() as session:
-            if not self.current_user:
+            if self.current_user is None:
                 raise ValueError("请先登录")
             
             user = session.query(User).filter_by(username=self.current_user.username).first()
@@ -176,5 +177,20 @@ class FileManager:
                 content = f.read()
                 print(f"文件内容: {content}")
                 return content
+
             
+    def main_menu(self):
+        print("欢迎使用文件管理系统")
+        print("1. 注册")
+        print("2. 登录")
+        print("3. 退出")
+
+    def login_menu(self):
+        print("1. 创建文件")
+        print("2. 删除文件")
+        print("3. 更新文件")
+        print("4. 列出文件")
+        print("5. 查找文件")
+        print("6. 读取文件")
+        print("7. 登出")
     
